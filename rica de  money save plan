@@ -1,0 +1,104 @@
+<script>
+let records = JSON.parse(localStorage.getItem("records")) || [];
+
+function saveData() {
+    localStorage.setItem("target", document.getElementById("target").value);
+    localStorage.setItem("saved", document.getElementById("saved").value);
+    update();
+}
+
+// 💰 金币音效
+function coinSound() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    for (let i = 0; i < 3; i++) {
+        let osc = ctx.createOscillator();
+        let gain = ctx.createGain();
+
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(1200 - i * 200, ctx.currentTime + i * 0.05);
+
+        gain.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.05);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(ctx.currentTime + i * 0.05);
+        osc.stop(ctx.currentTime + i * 0.05 + 0.1);
+    }
+}
+
+function addExpense() {
+    let type = document.getElementById("type").value;
+    let amount = parseFloat(document.getElementById("amount").value);
+
+    if (!amount || amount <= 0) return;
+
+    records.push({ type, amount });
+
+    let saved = parseFloat(localStorage.getItem("saved")) || 0;
+
+    saved -= amount;
+
+    localStorage.setItem("saved", saved);
+
+    localStorage.setItem("records", JSON.stringify(records));
+
+    coinSound();
+
+    update();
+}
+
+function deleteSelected() {
+    let checkboxes = document.querySelectorAll(".chk");
+
+    for (let i = checkboxes.length - 1; i >= 0; i--) {
+        if (checkboxes[i].checked) {
+
+            let saved = parseFloat(localStorage.getItem("saved")) || 0;
+
+            saved += records[i].amount;
+
+            localStorage.setItem("saved", saved);
+
+            records.splice(i, 1);
+        }
+    }
+
+    localStorage.setItem("records", JSON.stringify(records));
+
+    update();
+}
+
+function update() {
+
+    let target = parseFloat(localStorage.getItem("target")) || 0;
+
+    let saved = parseFloat(localStorage.getItem("saved")) || 0;
+
+    let percent = target
+        ? ((saved / target) * 100).toFixed(2)
+        : 0;
+
+    document.getElementById("status").innerText =
+        "💰 存款：" + saved + " / " + target + "（" + percent + "%）";
+
+    let list = document.getElementById("list");
+
+    list.innerHTML = "";
+
+    records.forEach((r, i) => {
+
+        let li = document.createElement("li");
+
+        li.innerHTML = `
+            <input type="checkbox" class="chk">
+            ${r.type} - 💸 ${r.amount}
+        `;
+
+        list.appendChild(li);
+    });
+}
+
+update();
+</script>
